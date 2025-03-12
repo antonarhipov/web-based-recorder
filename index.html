@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web-Based Voice Recorder</title>
+    <link rel="stylesheet" href="src/styles/main.css">
+</head>
+<body>
+    <header>
+        <h1>Voice Recorder</h1>
+        <p>Record, visualize, and save your voice with ease</p>
+    </header>
+
+    <main>
+        <section id="recording-controls">
+            <button id="record-button" class="btn primary">Record</button>
+            <button id="stop-button" class="btn" disabled>Stop</button>
+            <button id="pause-button" class="btn" disabled>Pause</button>
+            <div id="recording-status">
+                <span id="status-text">Ready to record</span>
+                <span id="recording-time">00:00</span>
+            </div>
+        </section>
+
+        <section id="visualization-area">
+            <canvas id="visualizer"></canvas>
+            <div id="visualization-controls">
+                <select id="visualization-type">
+                    <option value="waveform">Waveform</option>
+                    <option value="frequency">Frequency Bars</option>
+                    <option value="circular">Circular</option>
+                </select>
+            </div>
+        </section>
+
+        <section id="recordings-list">
+            <h2>Your Recordings</h2>
+            <div id="recordings-container">
+                <!-- Recordings will be added here dynamically -->
+                <p id="no-recordings">No recordings yet. Start recording to see your recordings here.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2023 Web-Based Voice Recorder</p>
+    </footer>
+
+    <script src="src/scripts/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "name": "web-based-recorder",
+  "version": "1.0.0",
+  "description": "A web-based voice recording application with visual effects",
+  "main": "index.html",
+  "scripts": {
+    "start": "serve .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "audio",
+    "recording",
+    "visualization",
+    "web",
+    "voice"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^8.42.0",
+    "prettier": "^2.8.8",
+    "serve": "^14.2.0"
+  }
+}
