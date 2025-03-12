@@ -268,6 +268,14 @@ function addRecordingToList(recording) {
             <button class="btn play-btn">Play</button>
             <button class="btn delete-btn">Delete</button>
         </div>
+        <div class="progress-container">
+            <div class="progress-bar"></div>
+            <div class="progress-handle"></div>
+        </div>
+        <div class="time-display">
+            <span class="current-time">00:00</span>
+            <span class="total-time">${recording.duration}</span>
+        </div>
         <audio src="${recording.url}" controls style="display: none;"></audio>
     `;
 
@@ -275,6 +283,52 @@ function addRecordingToList(recording) {
     const playButton = recordingElement.querySelector('.play-btn');
     const deleteButton = recordingElement.querySelector('.delete-btn');
     const audio = recordingElement.querySelector('audio');
+    const progressContainer = recordingElement.querySelector('.progress-container');
+    const progressBar = recordingElement.querySelector('.progress-bar');
+    const progressHandle = recordingElement.querySelector('.progress-handle');
+    const currentTimeDisplay = recordingElement.querySelector('.current-time');
+    const totalTimeDisplay = recordingElement.querySelector('.total-time');
+
+    // Update progress bar and time display as audio plays
+    audio.addEventListener('timeupdate', () => {
+        if (audio.duration) {
+            const progressPercent = (audio.currentTime / audio.duration) * 100;
+            progressBar.style.width = `${progressPercent}%`;
+            progressHandle.style.left = `${progressPercent}%`;
+
+            // Update current time display
+            const minutes = Math.floor(audio.currentTime / 60).toString().padStart(2, '0');
+            const seconds = Math.floor(audio.currentTime % 60).toString().padStart(2, '0');
+            currentTimeDisplay.textContent = `${minutes}:${seconds}`;
+        }
+    });
+
+    // Set total time display when metadata is loaded
+    audio.addEventListener('loadedmetadata', () => {
+        if (audio.duration && !isNaN(audio.duration)) {
+            const minutes = Math.floor(audio.duration / 60).toString().padStart(2, '0');
+            const seconds = Math.floor(audio.duration % 60).toString().padStart(2, '0');
+            totalTimeDisplay.textContent = `${minutes}:${seconds}`;
+        }
+    });
+
+    // Reset progress bar when audio ends
+    audio.addEventListener('ended', () => {
+        progressBar.style.width = '0%';
+        progressHandle.style.left = '0%';
+        currentTimeDisplay.textContent = '00:00';
+        playButton.textContent = 'Play';
+    });
+
+    // Allow seeking by clicking on progress bar
+    progressContainer.addEventListener('click', (e) => {
+        const rect = progressContainer.getBoundingClientRect();
+        const clickPosition = (e.clientX - rect.left) / rect.width;
+
+        if (audio.duration) {
+            audio.currentTime = clickPosition * audio.duration;
+        }
+    });
 
     playButton.addEventListener('click', () => {
         if (audio.paused) {
