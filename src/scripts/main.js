@@ -77,10 +77,18 @@ async function toggleRecording() {
         recordButton.textContent = 'Pause';
         stopButton.disabled = false;
         pauseButton.disabled = false;
-        statusText.textContent = 'Recording...';
 
-        // Start visualization
+        // Add recording indicator and class
+        document.getElementById('recording-controls').classList.add('recording');
+        statusText.innerHTML = '<span class="recording-indicator"></span>Recording...';
+
+        // Start visualization with smooth fade-in
+        visualizer.style.opacity = '0';
         visualize();
+        setTimeout(() => {
+            visualizer.style.transition = 'opacity var(--transition-medium) var(--easing-standard)';
+            visualizer.style.opacity = '1';
+        }, 100);
     } catch (error) {
         console.error('Error accessing microphone:', error);
         statusText.textContent = 'Error: Could not access microphone';
@@ -117,9 +125,14 @@ function pauseRecording() {
     isPaused = true;
     clearInterval(recordingTimer);
 
-    // Update UI
+    // Update UI with smooth transition
     recordButton.textContent = 'Resume';
-    statusText.textContent = 'Paused';
+    document.getElementById('recording-controls').classList.remove('recording');
+    document.getElementById('recording-controls').classList.add('paused');
+
+    // Fade out the recording indicator
+    statusText.innerHTML = 'Paused';
+    statusText.style.transition = 'color var(--transition-medium) var(--easing-standard)';
 }
 
 // Resume recording
@@ -130,9 +143,13 @@ function resumeRecording() {
     isPaused = false;
     recordingTimer = setInterval(updateRecordingTime, 1000);
 
-    // Update UI
+    // Update UI with smooth transition
     recordButton.textContent = 'Pause';
-    statusText.textContent = 'Recording...';
+    document.getElementById('recording-controls').classList.remove('paused');
+    document.getElementById('recording-controls').classList.add('recording');
+
+    // Add back the recording indicator with animation
+    statusText.innerHTML = '<span class="recording-indicator"></span>Recording...';
 }
 
 // Toggle pause/resume
@@ -156,11 +173,22 @@ function stopRecording() {
     // Stop all tracks on the stream
     audioStream.getTracks().forEach(track => track.stop());
 
-    // Update UI
+    // Update UI with smooth transitions
     recordButton.textContent = 'Record';
     stopButton.disabled = true;
     pauseButton.disabled = true;
-    statusText.textContent = 'Processing recording...';
+
+    // Remove recording/paused classes and add processing class
+    const recordingControls = document.getElementById('recording-controls');
+    recordingControls.classList.remove('recording', 'paused');
+    recordingControls.classList.add('processing');
+
+    // Add loading indicator
+    statusText.innerHTML = 'Processing recording... <div class="loading-indicator visible"></div>';
+
+    // Fade out visualizer
+    visualizer.style.transition = 'opacity var(--transition-medium) var(--easing-standard)';
+    visualizer.style.opacity = '0.5';
 }
 
 // Update recording time display
@@ -202,12 +230,29 @@ function saveRecording() {
 
     // Reset for next recording
     audioChunks = [];
-    statusText.textContent = 'Recording saved';
+
+    // Remove processing class and update status with animation
+    const recordingControls = document.getElementById('recording-controls');
+    recordingControls.classList.remove('processing');
+
+    // Show success message with fade-in animation
+    statusText.innerHTML = '<span style="color: var(--success-color); opacity: 0; transition: opacity var(--transition-medium) var(--easing-standard);">Recording saved</span>';
+    setTimeout(() => {
+        statusText.querySelector('span').style.opacity = '1';
+    }, 50);
+
+    // Reset visualizer opacity
+    visualizer.style.opacity = '1';
 
     // Hide "no recordings" message if it's visible
     if (noRecordingsMessage) {
         noRecordingsMessage.style.display = 'none';
     }
+
+    // After a delay, reset the status text
+    setTimeout(() => {
+        statusText.innerHTML = 'Ready to record';
+    }, 3000);
 }
 
 // Store recording blob in IndexedDB
@@ -318,6 +363,15 @@ function addRecordingToList(recording) {
         progressHandle.style.left = '0%';
         currentTimeDisplay.textContent = '00:00';
         playButton.textContent = 'Play';
+
+        // Remove playing class and reset scale with smooth transition
+        const recordingItem = recordingElement.closest('.recording-item');
+        recordingItem.classList.remove('playing');
+
+        // Use transition for smooth reset
+        recordingItem.style.transition = 'transform var(--transition-medium) var(--easing-standard), box-shadow var(--transition-medium) var(--easing-standard)';
+        recordingItem.style.transform = '';
+        recordingItem.style.boxShadow = '';
     });
 
     // Allow seeking by clicking on progress bar
@@ -331,24 +385,77 @@ function addRecordingToList(recording) {
     });
 
     playButton.addEventListener('click', () => {
+        const recordingItem = recordingElement.closest('.recording-item');
+
         if (audio.paused) {
+            // Stop any other playing recordings
+            document.querySelectorAll('.recording-item.playing').forEach(item => {
+                if (item !== recordingItem) {
+                    const otherAudio = item.querySelector('audio');
+                    const otherPlayBtn = item.querySelector('.play-btn');
+                    if (otherAudio && otherPlayBtn) {
+                        otherAudio.pause();
+                        otherPlayBtn.textContent = 'Play';
+                        item.classList.remove('playing');
+                    }
+                }
+            });
+
+            // Play this recording with animation
             audio.play();
             playButton.textContent = 'Pause';
+            recordingItem.classList.add('playing');
+
+            // Add subtle scale animation
+            recordingItem.style.transition = 'transform var(--transition-medium) var(--easing-standard), box-shadow var(--transition-medium) var(--easing-standard)';
+            recordingItem.style.transform = 'scale(1.01)';
+            recordingItem.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
         } else {
+            // Pause with animation
             audio.pause();
             playButton.textContent = 'Play';
+            recordingItem.classList.remove('playing');
+
+            // Reset scale
+            recordingItem.style.transform = '';
+            recordingItem.style.boxShadow = '';
         }
     });
 
     deleteButton.addEventListener('click', () => {
-        deleteRecording(recording.id);
-        recordingElement.remove();
+        // Confirm deletion with a subtle animation
+        recordingElement.style.transition = 'all var(--transition-medium) var(--easing-standard)';
+        recordingElement.style.opacity = '0.7';
+        recordingElement.style.transform = 'scale(0.98)';
 
-        // Show "no recordings" message if there are no recordings left
-        const recordings = document.querySelectorAll('.recording-item');
-        if (recordings.length === 0 && noRecordingsMessage) {
-            noRecordingsMessage.style.display = 'block';
-        }
+        // Add a slight delay before actual deletion for better UX
+        setTimeout(() => {
+            // Animate removal with fade out and slide up
+            recordingElement.style.transition = 'all var(--transition-medium) var(--easing-standard)';
+            recordingElement.style.opacity = '0';
+            recordingElement.style.maxHeight = '0';
+            recordingElement.style.margin = '0';
+            recordingElement.style.padding = '0';
+            recordingElement.style.overflow = 'hidden';
+
+            // Delete from storage and remove element after animation completes
+            setTimeout(() => {
+                deleteRecording(recording.id);
+                recordingElement.remove();
+
+                // Show "no recordings" message if there are no recordings left
+                const recordings = document.querySelectorAll('.recording-item');
+                if (recordings.length === 0 && noRecordingsMessage) {
+                    // Fade in the no recordings message
+                    noRecordingsMessage.style.display = 'block';
+                    noRecordingsMessage.style.opacity = '0';
+                    setTimeout(() => {
+                        noRecordingsMessage.style.transition = 'opacity var(--transition-medium) var(--easing-standard)';
+                        noRecordingsMessage.style.opacity = '1';
+                    }, 50);
+                }
+            }, 400);
+        }, 200);
     });
 
     // Add to container
@@ -461,7 +568,19 @@ function dataURItoBlob(dataURI) {
 
 // Change visualization type
 function changeVisualizationType() {
-    currentVisualization = visualizationTypeSelect.value;
+    // Add fade transition between visualization types
+    visualizer.style.transition = 'opacity var(--transition-medium) var(--easing-standard)';
+    visualizer.style.opacity = '0.2';
+
+    // Change visualization type after a short delay
+    setTimeout(() => {
+        currentVisualization = visualizationTypeSelect.value;
+
+        // Fade back in
+        setTimeout(() => {
+            visualizer.style.opacity = '1';
+        }, 100);
+    }, 300);
 }
 
 // Visualize audio
